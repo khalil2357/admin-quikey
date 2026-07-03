@@ -3,13 +3,40 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 
+import { useRouter } from "next/navigation";
+
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempted:", email);
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const res = await fetch("http://localhost:3500/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Invalid credentials");
+      }
+
+      // Successful login, optionally store tokens here if not using httpOnly cookies exclusively
+      // Then redirect to the dashboard
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -36,6 +63,12 @@ export default function LoginPage() {
               Log in to your Quikey Admin portal
             </p>
           </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm font-semibold text-center">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
@@ -73,10 +106,13 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full py-4 bg-black text-white rounded-full font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-[0_10px_20px_rgba(0,0,0,0.1)] flex items-center justify-center gap-2 group"
+              disabled={isLoading}
+              className="w-full py-4 bg-black text-white rounded-full font-bold text-lg hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-[0_10px_20px_rgba(0,0,0,0.1)] flex items-center justify-center gap-2 group disabled:opacity-70 disabled:hover:scale-100"
             >
-              Sign In
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-1"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              {isLoading ? "Signing in..." : "Sign In"}
+              {!isLoading && (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-1"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              )}
             </button>
           </form>
 
