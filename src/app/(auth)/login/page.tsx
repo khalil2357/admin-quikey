@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-
+import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -29,8 +29,13 @@ export default function LoginPage() {
         throw new Error(errorData.message || "Invalid credentials");
       }
 
-      // Successful login, optionally store tokens here if not using httpOnly cookies exclusively
-      // Then redirect to the dashboard
+      const data = await res.json();
+      
+      // Store token and role in cookies for middleware protection
+      Cookies.set("quikey_access_token", data.accessToken, { expires: 7 });
+      
+      // Note: We don't have globalRole directly returned from the backend in the original payload, 
+      // but we can just assume a successful regular login goes to /dashboard.
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message);
